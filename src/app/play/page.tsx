@@ -1773,6 +1773,7 @@ function PlayPageClient() {
   // 播放进度保存相关
   const saveIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const lastSaveTimeRef = useRef<number>(0);
+  const lastSavedPlayTimeRef = useRef<number | null>(null);
 
   // 下集预缓存相关
   const nextEpisodePreCacheTriggeredRef = useRef<boolean>(false);
@@ -5703,9 +5704,14 @@ function PlayPageClient() {
     const player = artPlayerRef.current;
     const currentTime = player.currentTime || 0;
     const duration = player.duration || 0;
+    const playTime = Math.floor(currentTime);
 
     // 如果播放时间太短（少于5秒）或者视频时长无效，不保存
     if (currentTime < 1 || !duration) {
+      return;
+    }
+
+    if (lastSavedPlayTimeRef.current === playTime) {
       return;
     }
 
@@ -5724,12 +5730,13 @@ function PlayPageClient() {
         cover: detailRef.current?.poster || '',
         index: currentEpisodeIndexRef.current + 1, // 转换为1基索引
         total_episodes: detailRef.current?.episodes.length || 1,
-        play_time: Math.floor(currentTime),
+        play_time: playTime,
         total_time: Math.floor(duration),
         save_time: Date.now(),
         search_title: searchTitle,
       });
 
+      lastSavedPlayTimeRef.current = playTime;
       lastSaveTimeRef.current = Date.now();
       console.log('播放进度已保存:', {
         title: videoTitleRef.current,
